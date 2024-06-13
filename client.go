@@ -829,7 +829,11 @@ func (c *Client) startReadRoutines() {
 
 func (c *Client) stopReadRoutines() {
 	if c.reader != nil {
-		c.reader.setAllowInterleavedFrames(false)
+		if *c.effectiveTransport == TransportTCP {
+			c.reader.setAllowInterleavedFrames(true)
+		} else {
+			c.reader.setAllowInterleavedFrames(false)
+		}
 	}
 
 	c.checkTimeoutTimer = emptyTimer()
