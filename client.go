@@ -1237,7 +1237,7 @@ func (c *Client) do(req *base.Request, skipResponse bool) (*base.Response, error
 	}
 
 	// send request again with authentication
-	if res.StatusCode == base.StatusUnauthorized && req.URL.User != nil && c.sender == nil {
+	if res.StatusCode == base.StatusUnauthorized && req.URL.User != nil {
 		pass, _ := req.URL.User.Password()
 		user := req.URL.User.Username()
 
@@ -1329,7 +1329,7 @@ func (c *Client) doKeepAlive() error {
 		}(),
 		// use the stream base URL, otherwise some cameras do not reply
 		URL: c.baseURL,
-	}, true)
+	}, false)
 	return err
 }
 
