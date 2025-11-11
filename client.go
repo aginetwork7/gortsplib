@@ -1175,7 +1175,7 @@ func (c *Client) connOpen() error {
 	return nil
 }
 
-func (c *Client) do(req *base.Request, skipResponse bool) (*base.Response, error) {
+func (c *Client) do(req *base.Request, skipResponse bool, depths ...int) (*base.Response, error) {
 	if !c.optionsSent && req.Method != base.Options {
 		_, err := c.doOptions(req.URL)
 		if err != nil {
@@ -1237,7 +1237,11 @@ func (c *Client) do(req *base.Request, skipResponse bool) (*base.Response, error
 	}
 
 	// send request again with authentication
-	if res.StatusCode == base.StatusUnauthorized && req.URL.User != nil {
+	var depth = 1
+	for _, d := range depths {
+		depth = d
+	}
+	if res.StatusCode == base.StatusUnauthorized && req.URL.User != nil && depth <= 2 {
 		pass, _ := req.URL.User.Password()
 		user := req.URL.User.Username()
 
@@ -1252,7 +1256,7 @@ func (c *Client) do(req *base.Request, skipResponse bool) (*base.Response, error
 		}
 		c.sender = sender
 
-		return c.do(req, skipResponse)
+		return c.do(req, skipResponse, depth+1)
 	}
 
 	return res, nil
