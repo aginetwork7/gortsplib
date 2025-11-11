@@ -1241,7 +1241,7 @@ func (c *Client) do(req *base.Request, skipResponse bool, depths ...int) (*base.
 	for _, d := range depths {
 		depth = d
 	}
-	if res.StatusCode == base.StatusUnauthorized && req.URL.User != nil && depth <= 2 {
+	if res.StatusCode == base.StatusUnauthorized && req.URL.User != nil && depth < 2 {
 		pass, _ := req.URL.User.Password()
 		user := req.URL.User.Username()
 
