@@ -427,6 +427,19 @@ type OnPacketRTCPFunc func(rtcp.Packet)
 // OnPacketRTCPAnyFunc is the prototype of the callback passed to OnPacketRTCPAny().
 type OnPacketRTCPAnyFunc func(*description.Media, rtcp.Packet)
 
+// UnexpectedInterleavedFramePolicy defines how to handle interleaved TCP frames
+// that arrive when interleaved frames are not allowed (for example, after PAUSE).
+// The zero value is UnexpectedInterleavedFramePolicyDiscard.
+type UnexpectedInterleavedFramePolicy int
+
+const (
+	// UnexpectedInterleavedFramePolicyDiscard discards unexpected interleaved frames.
+	// This is the default behavior.
+	UnexpectedInterleavedFramePolicyDiscard UnexpectedInterleavedFramePolicy = iota
+	// UnexpectedInterleavedFramePolicyError returns an error on unexpected interleaved frames.
+	UnexpectedInterleavedFramePolicyError
+)
+
 // Client is a RTSP client.
 type Client struct {
 	//
@@ -455,6 +468,10 @@ type Client struct {
 	// If nil, it is chosen automatically (first UDP, then, if it fails, TCP).
 	// It defaults to nil.
 	Protocol *Protocol
+	// handling policy for interleaved TCP frames that arrive when frames are not allowed.
+	// This setting applies only when transport protocol is TCP.
+	// The zero value (when omitted) means UnexpectedInterleavedFramePolicyDiscard.
+	UnexpectedInterleavedFramePolicy UnexpectedInterleavedFramePolicy
 	// enable communication with servers which don't provide UDP server ports
 	// or use different server ports than the announced ones.
 	// This can be a security issue.
@@ -1049,7 +1066,12 @@ func (c *Client) startTransportRoutines() {
 	}
 
 	if c.setuppedTransport.Protocol == ProtocolTCP {
+		c.reader.setDiscardInterleavedFramesWhenDisabled(
+			c.UnexpectedInterleavedFramePolicy != UnexpectedInterleavedFramePolicyError,
+		)
 		c.reader.setAllowInterleavedFrames(true)
+	} else {
+		c.reader.setDiscardInterleavedFramesWhenDisabled(false)
 	}
 }
 
